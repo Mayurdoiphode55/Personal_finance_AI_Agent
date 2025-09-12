@@ -1,0 +1,8 @@
+langchain
+langchain-google-genai
+langgraph
+streamlit
+redis
+google-cloud-bigquery
+requests
+python-dotenv

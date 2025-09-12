@@ -1,0 +1,41 @@
+transaction_id,user_id,date,description,amount,category,bank_name
+t1,user_001,15-08-2025,Salary Deposit,3500,Income,HDFC Bank
+t2,user_001,16-08-2025,Zomato Order,-15.5,Food & Dining,HDFC Bank
+t3,user_001,18-08-2025,Netflix Subscription,-12,Bills & Utilities,HDFC Bank
+t4,user_001,20-08-2025,Uber Ride,-22.75,Transport,HDFC Bank
+t5,user_001,25-08-2025,Grocery Shopping,-85.2,Groceries,HDFC Bank
+t6,user_002,15-08-2025,Freelance Payment,2200,Income,ICICI Bank
+t7,user_002,17-08-2025,Amazon Purchase,-112.3,Shopping,ICICI Bank
+t8,user_002,19-08-2025,Electricity Bill,-75,Bills & Utilities,ICICI Bank
+t9,user_002,21-08-2025,Swiggy Order,-25,Food & Dining,ICICI Bank
+t10,user_002,28-08-2025,Movie Tickets,-30,Entertainment,ICICI Bank
+t11,user_003,15-08-2025,Consulting Gig,1500,Income,Axis Bank
+t12,user_003,16-08-2025,Medical Supplies,-50,Health,Axis Bank
+t13,user_003,20-08-2025,Gasoline,-40,Transport,Axis Bank
+t14,user_003,22-08-2025,Zara,-150,Shopping,Axis Bank
+t15,user_003,30-08-2025,Restaurant,-60,Food & Dining,Axis Bank
+t16,user_001,01-09-2025,Phone Bill,-45,Bills & Utilities,HDFC Bank
+t17,user_001,03-09-2025,Starbucks Coffee,-8.5,Food & Dining,HDFC Bank
+t18,user_001,05-09-2025,Amazon Prime,-10,Bills & Utilities,HDFC Bank
+t19,user_001,08-09-2025,Local Train Pass,-30,Transport,HDFC Bank
+t20,user_002,02-09-2025,Gym Membership,-50,Health,ICICI Bank
+t21,user_002,06-09-2025,Book Purchase,-28.99,Shopping,ICICI Bank
+t22,user_002,10-09-2025,Spotify Premium,-7,Bills & Utilities,ICICI Bank
+t23,user_003,04-09-2025,Rent Payment,-800,Rent,Axis Bank
+t24,user_003,07-09-2025,Internet Bill,-60,Bills & Utilities,Axis Bank
+t25,user_003,11-09-2025,Lunch with Friends,-45,Food & Dining,Axis Bank
+t26,user_004,01-09-2025,Salary,4200,Income,SBI
+t27,user_004,02-09-2025,Big Bazaar Groceries,-120,Groceries,SBI
+t28,user_004,05-09-2025,Electricity Bill,-90,Bills & Utilities,SBI
+t29,user_004,08-09-2025,Myntra Shopping,-150,Shopping,SBI
+t30,user_004,10-09-2025,Zomato Delivery,-20,Food & Dining,SBI
+t31,user_004,12-09-2025,Petrol,-40,Transport,SBI
+t32,user_005,05-09-2025,Part-time Job,800,Income,Kotak Bank
+t33,user_005,06-09-2025,University Canteen,-10,Food & Dining,Kotak Bank
+t34,user_005,07-09-2025,Mobile Recharge,-12,Bills & Utilities,Kotak Bank
+t35,user_005,09-09-2025,Stationery,-15,Education,Kotak Bank
+t36,user_005,11-09-2025,Bus Pass,-30,Transport,Kotak Bank
+t37,user_005,14-09-2025,Weekend Outing,-55,Entertainment,Kotak Bank
+t38,user_001,15-09-2025,Salary Deposit,3500,Income,HDFC Bank
+t39,user_002,15-09-2025,Freelance Payment,2500,Income,ICICI Bank
+t40,user_004,15-09-2025,Stock Dividend,150,Income,SBI
