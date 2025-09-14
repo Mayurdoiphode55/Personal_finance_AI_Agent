@@ -7,82 +7,70 @@ import json
 from pathlib import Path
 from typing import TypedDict
 from dotenv import load_dotenv
-import pandas as pd
+import markdown
 
 # --- Core AI and Data Libraries ---
+from google.oauth2 import service_account
 from google.cloud import bigquery
 from langchain.tools import tool
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.agents import create_tool_calling_agent, AgentExecutor
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain.chains import LLMChain
+from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph import StateGraph, END
 
-# --- User Interface Library ---
-import streamlit as st
+# --- Web Framework Library ---
+from flask import Flask, render_template, request
 
 # ==============================================================================
 # PART 1: ENVIRONMENT AND CONFIGURATION
 # ==============================================================================
 
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
 
 # --- Google Cloud Configuration ---
-try:
-    credentials_path = Path(__file__).parent / "key.json"
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(credentials_path)
-    GCP_PROJECT_ID = "calcium-scholar-467311-t5"
-    BIGQUERY_TABLE_ID = f"{GCP_PROJECT_ID}.finance_data.transactions"
-except Exception as e:
-    st.error(f"Error setting up Google Cloud credentials path: {e}")
-    st.stop()
+GCP_PROJECT_ID = "calcium-scholar-467311-t5"
+credentials_path = Path("key.json")  # Make sure key.json is in the same folder
 
 # --- LLM Initialization ---
 if not os.getenv("GOOGLE_API_KEY"):
-    st.error("🔴 GOOGLE_API_KEY not found. Please add it to your .env file.")
-    st.stop()
+    raise ValueError("🔴 GOOGLE_API_KEY not found in .env")
 
-try:
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest", temperature=0.1)
-except Exception as e:
-    st.error(f"🔴 Failed to initialize the language model: {e}")
-    st.stop()
+llm = ChatGoogleGenerativeAI(model="gemini-1.5-pro-latest", temperature=0.1)
 
 # ==============================================================================
-# PART 2: LANGCHAIN TOOL DEFINITION (BIGQUERY CONNECTOR)
+# PART 2: BIGQUERY TOOL
 # ==============================================================================
 
 @tool
-def get_transaction_data(user_id: str) -> str:
-    """
-    Retrieves transaction data for a user from BigQuery.
-    Returns JSON with transactions ordered by date (most recent first).
-    """
+def get_transaction_data(user_id: str) -> list:
+    """Fetch transaction data from BigQuery."""
     try:
-        client = bigquery.Client.from_service_account_json(str(credentials_path))
+        credentials = service_account.Credentials.from_service_account_file(str(credentials_path))
+        client = bigquery.Client(credentials=credentials, project=GCP_PROJECT_ID)
+        table_id = f"{GCP_PROJECT_ID}.finance_data.transactions"
+
         query = f"""
             SELECT date, description, amount, category, bank_name
-            FROM `{BIGQUERY_TABLE_ID}`
+            FROM `{table_id}`
             WHERE user_id = @user_id
             ORDER BY date DESC;
         """
         job_config = bigquery.QueryJobConfig(
-            query_parameters=[
-                bigquery.ScalarQueryParameter("user_id", "STRING", user_id),
-            ]
+            query_parameters=[bigquery.ScalarQueryParameter("user_id", "STRING", user_id)]
         )
         query_job = client.query(query, job_config=job_config)
         results = query_job.result()
         transactions = [dict(row) for row in results]
-        
-        if not transactions:
-            return json.dumps({"error": f"No transactions found for user_id '{user_id}'."})
-        
+
         for t in transactions:
             t['date'] = t['date'].isoformat()
-        return json.dumps(transactions)
+
+        return transactions
+
     except Exception as e:
-        return json.dumps({"error": f"An error occurred while querying BigQuery: {e}"})
+        print(f"BigQuery error: {e}")
+        return []
 
 tools = [get_transaction_data]
 
@@ -95,133 +83,97 @@ class FinancialGraphState(TypedDict):
     analysis_result: str
     budget_plan: str
     investment_options: str
-    raw_data: str
 
 def analyzer_agent_node(state: FinancialGraphState):
-    """Agent to analyze transaction data and produce a formatted report."""
-    st.session_state.messages.append("🔍 **Analyzer Agent:** Accessing database and analyzing spending patterns...")
+    """Analyze transactions and produce JSON + markdown analysis."""
+    print("🔍 Analyzer Agent running...")
     user_id = state['user_id']
-    
+
+    # Fetch transactions
+    transactions = get_transaction_data(user_id)
+
+    if not transactions:
+        total_income = 0
+        total_spending = 0
+        net_flow = 0
+        summary_text = "No transactions found for this user."
+    else:
+        total_income = sum(t['amount'] for t in transactions if t['amount'] > 0)
+        total_spending = sum(t['amount'] for t in transactions if t['amount'] < 0)
+        net_flow = total_income + total_spending
+
+        summary_text = f"User has {len(transactions)} transactions. " \
+                       f"Largest transaction: ${max(t['amount'] for t in transactions):,.2f}, " \
+                       f"Smallest transaction: ${min(t['amount'] for t in transactions):,.2f}."
+
+    # LLM prompt for detailed markdown report
     prompt = ChatPromptTemplate.from_messages([
-        ("system", """You are a meticulous financial analyst AI.
-
-**Formatting Rule**: Your response will be displayed in a UI, so perfect formatting is crucial. Always ensure:
-- A single space between words and numbers or symbols (e.g., "$1,234.56", "50%").
-- No extra spaces between labels and values (e.g., "Total Income: $3,500.00").
-- Markdown tables are clean and aligned.
-
-Start with:
-
-### Metrics Summary
-Total Income: $XXXX.XX
-Total Spending: $XXXX.XX
-Net Flow: $XXXX.XX
-
-Then:
-
-### Executive Summary
-A two-sentence friendly overview.
-
-### Spending by Category
-A table with "Category", "Total Amount ($)", "Percentage (%)".
-
-### Recurring Subscriptions
-A list or "No recurring subscriptions identified."
-
-### Key Insights
-- **Top Expense:** Name and amount.
-- **Potential Savings:** Highlight a category.
-
-Always double-check formatting before responding.
-"""),
-        ("human", "Please provide a full financial analysis for the user with ID: {input}"),
-        MessagesPlaceholder(variable_name="agent_scratchpad"),
+        ("system", "You are a meticulous financial analyst AI."),
+        ("human", "Here is the user's transaction summary:\n"
+                  "Total Income: {total_income}\n"
+                  "Total Spending: {total_spending}\n"
+                  "Net Flow: {net_flow}\n\n"
+                  "Provide a detailed financial analysis in markdown.")
     ])
-    
-    agent = create_tool_calling_agent(llm, tools, prompt)
-    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-    result = agent_executor.invoke({"input": user_id})
-    
-    raw_data_result = result.get('intermediate_steps', [({}, '')])[0][1]
-    if "error" in raw_data_result:
-        return {"analysis_result": f"Failed to retrieve data. Check user ID and database.\nDetails: {raw_data_result}"}
-        
-    return {"analysis_result": result['output'], "raw_data": raw_data_result}
+
+    chain = LLMChain(llm=llm, prompt=prompt)
+    detailed_analysis = chain.run({
+        "total_income": total_income,
+        "total_spending": total_spending,
+        "net_flow": net_flow
+    })
+
+
+    # Combine JSON + markdown
+    metrics_json = json.dumps({
+        "total_income": total_income,
+        "total_spending": total_spending,
+        "net_flow": net_flow
+    })
+
+    # Remove any leading 'json {...}' line from LLM output
+    detailed_analysis_clean = re.sub(r'^json\s+(\{.*?\})\s*', '', detailed_analysis, flags=re.MULTILINE)
+
+    # Combine JSON metrics with cleaned markdown
+    full_analysis = f"```json\n{metrics_json}\n```"
+    full_analysis += f"\n\n{detailed_analysis_clean}"
+
+    return {"analysis_result": full_analysis}
+
+
+
+
 
 def budgetor_agent_node(state: FinancialGraphState):
-    """Agent to create a personalized budget plan."""
-    st.session_state.messages.append("📝 **Budgetor Agent:** Crafting a personalized budget plan...")
+    print("📝 Budgetor Agent running...")
     analysis = state['analysis_result']
-    
+
     prompt = ChatPromptTemplate.from_messages([
-        ("system", """You are a friendly budgeting expert.
-
-**Formatting Rule**: Perfect formatting is essential. Ensure:
-- Single space between words and symbols (e.g., "$1,000.00").
-- Tables are aligned and headers formatted correctly.
-
-Start with a positive sentence, then create a budget using the 50/30/20 rule.
-
-### Budget Plan
-| Category         | Actual Spending ($) | Suggested Budget ($) (50/30/20) | Difference ($) |
-|-----------------|--------------------|---------------------------------|----------------|
-| Example         | $1,000.00          | $1,200.00                       | +$200.00       |
-
-End with 2-3 actionable recommendations.
-"""),
-        ("human", "Here is the user's financial analysis:\n\n{analysis}\n\nPlease create a detailed and encouraging budget plan."),
+        ("system", "You are a friendly budgeting expert."),
+        ("human", "Here is the user's financial analysis:\n\n{analysis}\n\n"
+                  "Create a detailed, encouraging budget plan.")
     ])
-    
-    chain = prompt | llm
-    result = chain.invoke({"analysis": analysis})
-    return {"budget_plan": result.content}
+
+    chain = LLMChain(llm=llm, prompt=prompt)
+    budget_plan = chain.run({"analysis": analysis})
+    return {"budget_plan": budget_plan}
 
 def investor_agent_node(state: FinancialGraphState):
-    """Agent to suggest beginner-friendly investments."""
-    st.session_state.messages.append("📈 **Investor Agent:** Identifying beginner-friendly investment options...")
+    print("📈 Investor Agent running...")
     budget = state['budget_plan']
-    
+
     prompt = ChatPromptTemplate.from_messages([
-        ("system", """You are a financial educator. Your tone is clear and supportive.
-
-**Formatting Rule**: Formatting must be impeccable:
-- Use single spaces only where appropriate.
-- Present financial amounts with commas and two decimal points (e.g., "$1,000.00").
-- Use bullet points consistently.
-
-Start by identifying the user's potential monthly savings amount.
-
-**--- START OF TEMPLATE ---**
-Based on your budget, you have a potential of **$XXX.XX per month** for savings and investments. Here is a sensible plan for a beginner:
-
-- **Option 1: High-Yield Savings Account**
-  - **Allocation:** A suggested monthly amount (e.g., "$350 of your $700.00").
-  - **Suggestion:** Open a high-yield savings account.
-  - **Why it's a good first step:** Explain benefits concisely.
-
-- **Option 2: Index Fund Investing**
-  - **Allocation:** Suggested amount.
-  - **Suggestion:** Invest in an index fund tracking the S&P 500.
-  - **Why it's a good first step:** Explain diversification benefits.
-
-- **Option 3: Roth IRA Contributions**
-  - **Allocation:** Suggested amount.
-  - **Suggestion:** Start contributing to a Roth IRA.
-  - **Why it's a good first step:** Explain tax advantages.
-
-**--- END OF TEMPLATE ---**
-
-End with: **I am not a financial advisor. This information is for educational purposes only and is not financial advice.**
-"""),
-        ("human", "Here is the user's budget plan:\n\n{budget}\n\nPlease provide personalized investment suggestions."),
+        ("system", "You are a financial educator providing beginner-friendly investment advice."),
+        ("human", "Here is the user's budget plan:\n\n{budget}\n\n"
+                  "Provide personalized investment suggestions.")
     ])
-    
-    chain = prompt | llm
-    result = chain.invoke({"budget": budget})
-    return {"investment_options": result.content}
+
+    chain = LLMChain(llm=llm, prompt=prompt)
+    investment_options = chain.run({"budget": budget})
+    return {"investment_options": investment_options}
 
 # ==============================================================================
-# PART 4: LANGGRAPH WORKFLOW ASSEMBLY
+# PART 4: WORKFLOW
 # ==============================================================================
 
 workflow = StateGraph(FinancialGraphState)
@@ -232,106 +184,57 @@ workflow.set_entry_point("analyzer")
 workflow.add_edge("analyzer", "budgetor")
 workflow.add_edge("budgetor", "investor")
 workflow.add_edge("investor", END)
-app = workflow.compile()
+app_logic = workflow.compile()
 
 # ==============================================================================
-# PART 5: STREAMLIT USER INTERFACE
+# PART 5: FLASK WEB INTERFACE
 # ==============================================================================
 
-st.set_page_config(page_title="Finance AI Dashboard", page_icon="🤖", layout="wide")
+app = Flask(__name__)
 
-# Parse metrics from the analysis output
+@app.template_filter('markdown')
+def markdown_filter(text):
+    return markdown.markdown(text)
+
 def parse_metrics(analysis_result: str):
-    metrics = {
-        "Total Income": "N/A",
-        "Total Spending": "N/A",
-        "Net Flow": ("N/A", "off")
-    }
+    metrics = {"Total Income": "N/A", "Total Spending": "N/A", "Net Flow": ("N/A", "text-secondary")}
     try:
-        income_match = re.search(r"Total Income:[\s\xa0]*\$([\d,\.]+)", analysis_result, re.MULTILINE)
-        spending_match = re.search(r"Total Spending:[\s\xa0]*\$([\d,\.]+)", analysis_result, re.MULTILINE)
-        net_flow_match = re.search(r"Net Flow:[\s\xa0]*\$(-?[\d,\.]+)", analysis_result, re.MULTILINE)
+        json_match = re.search(r"\{[\s\S]*?\}", analysis_result)
+        if json_match:
+            data = json.loads(json_match.group(0))
+            income = data.get("total_income", 0)
+            spending = data.get("total_spending", 0)
+            net_flow = data.get("net_flow", 0)
 
-        if income_match:
-            metrics["Total Income"] = f"${income_match.group(1)}"
-        if spending_match:
-            metrics["Total Spending"] = f"${spending_match.group(1)}"
-        if net_flow_match:
-            net_flow_val = float(net_flow_match.group(1).replace(',', ''))
-            delta_color = "inverse" if net_flow_val < 0 else "normal"
-            metrics["Net Flow"] = (f"${net_flow_val:,.2f}", delta_color)
+            metrics["Total Income"] = f"${income:,.2f}"
+            metrics["Total Spending"] = f"${abs(spending):,.2f}"
+            delta_color = "text-danger" if net_flow < 0 else "text-success"
+            metrics["Net Flow"] = (f"${net_flow:,.2f}", delta_color)
     except Exception as e:
         print(f"Error parsing metrics: {e}")
     return metrics
 
-# Sidebar inputs
-with st.sidebar:
-    st.title("🤖 Finance AI Dashboard")
+@app.route('/', methods=['GET'])
+def index():
     user_ids = ["user_001", "user_002", "user_003", "user_004", "user_005"]
-    selected_user_id = st.selectbox("Select a User ID to Analyze", user_ids)
-    analyze_button = st.button("🚀 Analyze Finances", use_container_width=True)
-    st.divider()
-    st.info("This app uses AI to analyze finances, create a budget, and suggest investments.")
+    return render_template('index.html', user_ids=user_ids)
 
-# Main interface
-st.header(f"Financial Report for {selected_user_id}")
+@app.route('/analyze', methods=['POST'])
+def analyze():
+    user_id = request.form.get('user_id')
+    if not user_id:
+        return render_template('index.html', error="Please select a user ID.")
 
-if 'results' not in st.session_state:
-    st.session_state.results = None
-if 'messages' not in st.session_state:
-    st.session_state.messages = []
+    print(f"Starting analysis for user: {user_id}")
+    initial_state = {"user_id": user_id}
+    results = app_logic.invoke(initial_state)
+    print("Analysis complete.")
 
-if analyze_button:
-    st.session_state.results = None
-    st.session_state.messages = []
-    with st.status("Running financial analysis...", expanded=True) as status:
-        try:
-            initial_state = {"user_id": selected_user_id}
-            final_state = app.invoke(initial_state, {"recursion_limit": 5})
-            st.session_state.results = final_state
-            status.update(label="✅ Analysis Complete!", state="complete", expanded=False)
-        except Exception as e:
-            st.error(f"An error occurred: {e}")
-            status.update(label="❌ Analysis Failed!", state="error")
-
-if st.session_state.results:
-    results = st.session_state.results
     analysis_content = results.get("analysis_result", "No analysis available.")
     metrics = parse_metrics(analysis_content)
 
-    st.markdown("""
-    <style>
-        div[data-testid="stMetric"] {
-            background-color: rgba(28, 131, 225, 0.1);
-            border: 1px solid rgba(28, 131, 225, 0.1);
-            padding: 15px;
-            border-radius: 10px;
-            color: rgb(28, 131, 225);
-            overflow-wrap: break-word;
-        }
-        div[data-testid="stMetric"] > div:nth-child(1) > div:nth-child(2) {
-            color: rgba(28, 131, 225, 0.5);
-        }
-    </style>
-    """, unsafe_allow_html=True)
+    user_ids = ["user_001", "user_002", "user_003", "user_004", "user_005"]
+    return render_template('index.html', results=results, user_id=user_id, metrics=metrics, user_ids=user_ids)
 
-    st.subheader("Financial Overview")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Total Income", metrics["Total Income"])
-    col2.metric("Total Spending", metrics["Total Spending"])
-    if isinstance(metrics["Net Flow"], tuple):
-        col3.metric("Net Flow", metrics["Net Flow"][0], delta_color=metrics["Net Flow"][1])
-
-    st.divider()
-    tab1, tab2, tab3 = st.tabs(["📊 Detailed Analysis", "📋 Budget Plan", "📈 Investment Suggestions"])
-    with tab1:
-        st.markdown(analysis_content)
-    with tab2:
-        st.markdown(results.get("budget_plan", "No budget plan available."))
-    with tab3:
-        st.markdown(results.get("investment_options", "No investment suggestions available."))
-else:
-    st.info("Select a user from the sidebar and click 'Analyze Finances' to view their report.")
-
-st.markdown("---")
-st.markdown("Developed by an AI Assistant | Powered by Google Gemini & LangGraph")
+if __name__ == '__main__':
+    app.run(debug=True)
