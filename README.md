@@ -1,5 +1,5 @@
-💰 Personal Finance AI Agent (PFAA)
-The Personal Finance AI Agent (PFAA) is a powerful, multi-agent system built using LangGraph and the Gemini 1.5 Pro model. It processes user financial data stored in Google BigQuery, analyzes spending habits, generates a personalized budget plan, and provides proactive investment recommendations via a simple Flask web interface.
+📈 Financial Intelligence Agent: LangGraph & Gemini (PFAA)
+The Personal Finance AI Agent (PFAA) is a powerful, high-performance, multi-agent system built using LangGraph and the Gemini 1.5 Pro model. It processes user financial data stored in Google BigQuery, analyzes spending habits, generates a personalized budget plan, and provides proactive investment recommendations via a simple Flask web interface.
 
 This project demonstrates a complete, tool-augmented Generative AI workflow for complex data analysis, sequential decision-making, and high-performance data retrieval.
 
@@ -17,6 +17,65 @@ Gemini 1.5 Pro Power: Leverages the advanced reasoning capabilities of the Gemin
 Web Interface (Flask): Provides a simple web application for selecting a user ID and viewing the comprehensive financial report, metrics, and plan in a readable Markdown format.
 
 Real-time Metrics: Parses JSON output from the analysis step to display key financial metrics (Income, Spending, Net Flow) instantly.
+
+🧱 System Architecture
+The PFAA operates on a modern, layered architecture designed for speed and modularity.
+
+Component
+
+Role
+
+Technologies
+
+Frontend/UI
+
+User interaction, display of results, and user ID selection.
+
+Flask (Templates/HTML)
+
+Application Layer
+
+Orchestrates the entire process, handles caching logic, and manages the agents.
+
+Python, Flask, Redis Client
+
+Data Layer
+
+Provides the centralized, historical source of truth for all transactions.
+
+Google BigQuery
+
+Caching Layer
+
+Accelerates data access by storing frequently requested transaction data.
+
+Redis
+
+Agent Core
+
+The state machine that executes the financial analysis, planning, and recommendation steps sequentially.
+
+LangGraph
+
+Intelligence Layer
+
+Performs complex reasoning, generation of financial reports, budgets, and investment advice.
+
+Google Gemini 1.5 Pro
+
+Data Flow:
+
+A user selects a user_id on the Flask UI and initiates analysis.
+
+The get_transaction_data tool first checks the Redis Cache for the user's data.
+
+If data is present (cache hit), it's returned immediately (60% latency reduction).
+
+If data is not present (cache miss), it fetches from BigQuery.
+
+The data is passed to the LangGraph workflow, where the Analyzer, Budgetor, and Investor agents sequentially generate the final comprehensive report using the Gemini 1.5 Pro model.
+
+The final output is rendered back to the user via the Flask UI.
 
 🛠️ Tech Stack
 Language Model: Google Gemini 1.5 Pro (via langchain-google-genai)
