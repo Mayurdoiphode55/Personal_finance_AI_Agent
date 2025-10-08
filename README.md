@@ -102,25 +102,26 @@ Create a `.env` file in the project root:
 ```env
 GOOGLE_API_KEY="YOUR_GEMINI_API_KEY"
 GOOGLE_APPLICATION_CREDENTIALS="key.json"
+```
 
 # Redis Settings
 REDIS_HOST="localhost"
 REDIS_PORT="6379"
 
 # Setu API (optional)
-Setu_CLIENT_ID="YOUR_CLIENT_ID"
-Setu_CLIENT_SECRET="YOUR_CLIENT_SECRET"
+```Setu_CLIENT_ID="YOUR_CLIENT_ID"```
+```Setu_CLIENT_SECRET="YOUR_CLIENT_SECRET"```
 
 ### 4. Installation & Running
 
 #🐳 Using Docker (Recommended)
-docker-compose up --build
+```docker-compose up --build```
 
 #🐍 Without Docker
-git clone https://github.com/Mayurdoiphode55/Personal_finance_AI_Agent.git
-cd Personal_finance_AI_Agent
-pip install -r requirements.txt
-python app.py
+```git clone https://github.com/Mayurdoiphode55/Personal_finance_AI_Agent.git```
+```cd Personal_finance_AI_Agent```
+```pip install -r requirements.txt```
+```python app.py```
 
 
 ## 🧠 Agent Workflow
