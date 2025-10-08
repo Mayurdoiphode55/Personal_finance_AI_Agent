@@ -1,4 +1,4 @@
-<img width="2880" height="1800" alt="image" src="https://github.com/user-attachments/assets/145e6617-d6dd-4505-a7da-4fd4b7ad5932" /># 📈 Financial Intelligence Agent: LangGraph & Gemini (PFAA)
+# 📈 Financial Intelligence Agent: LangGraph & Gemini (PFAA)
 
 The **Personal Finance AI Agent (PFAA)** is a powerful, high-performance, multi-agent system built using **LangGraph** and the **Gemini 1.5 Pro** model.  
 It processes user financial data stored in **Google BigQuery**, analyzes spending habits, generates a personalized budget plan, and provides proactive investment recommendations via a simple **Flask web interface**.
