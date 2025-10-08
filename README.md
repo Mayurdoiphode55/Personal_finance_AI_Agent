@@ -145,7 +145,7 @@ The **LangGraph** logic (defined in `app.py`) executes in three sequential steps
 
 ## 📁 Project Structure
 
-Personal_finance_AI_Agent/
+```Personal_finance_AI_Agent/
 ├── app.py                # Main Flask app, LangGraph workflow, BigQuery/Redis logic
 ├── requirements.txt      # Dependencies
 ├── .env                  # Environment variables
