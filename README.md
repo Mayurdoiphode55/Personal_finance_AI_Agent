@@ -1,203 +1,157 @@
-📈 Financial Intelligence Agent: LangGraph & Gemini (PFAA)
-The Personal Finance AI Agent (PFAA) is a powerful, high-performance, multi-agent system built using LangGraph and the Gemini 1.5 Pro model. It processes user financial data stored in Google BigQuery, analyzes spending habits, generates a personalized budget plan, and provides proactive investment recommendations via a simple Flask web interface.
+# 📈 Financial Intelligence Agent: LangGraph & Gemini (PFAA)
 
-This project demonstrates a complete, tool-augmented Generative AI workflow for complex data analysis, sequential decision-making, and high-performance data retrieval.
+The **Personal Finance AI Agent (PFAA)** is a powerful, high-performance, multi-agent system built using **LangGraph** and the **Gemini 1.5 Pro** model.  
+It processes user financial data stored in **Google BigQuery**, analyzes spending habits, generates a personalized budget plan, and provides proactive investment recommendations via a simple **Flask web interface**.
 
-🌟 Features
-Financial Data Tool: Securely fetches transaction data from Google BigQuery, with capabilities for Setu API integration for data ingestion/categorization.
+This project demonstrates a complete, tool-augmented **Generative AI workflow** for complex data analysis, sequential decision-making, and high-performance data retrieval.
 
-Optimized Data Retrieval: Utilizes Redis Caching for efficient retrieval of frequently accessed financial data, significantly reducing latency.
+---
 
-Containerized Deployment: Dockerized for consistent and easy deployment across environments.
+## 🌟 Features
 
-Multi-Agent Workflow (LangGraph): Uses a state machine (Analyzer -> Budgetor -> Investor) to perform complex analysis in distinct, modular steps.
+- **Financial Data Tool:** Securely fetches transaction data from Google BigQuery, with capabilities for Setu API integration for data ingestion/categorization.  
+- **Optimized Data Retrieval:** Utilizes Redis Caching for efficient retrieval of frequently accessed financial data, significantly reducing latency.  
+- **Containerized Deployment:** Dockerized for consistent and easy deployment across environments.  
+- **Multi-Agent Workflow (LangGraph):** Uses a state machine (Analyzer → Budgetor → Investor) to perform complex analysis in distinct, modular steps.  
+- **Gemini 1.5 Pro Power:** Leverages the advanced reasoning capabilities of Gemini 1.5 Pro for deep financial insights, structured budgeting, and investment suggestions.  
+- **Web Interface (Flask):** Provides a simple web app for selecting a user ID and viewing the financial report, metrics, and plan in readable Markdown format.  
+- **Real-time Metrics:** Parses JSON output from the analysis step to display key financial metrics (Income, Spending, Net Flow) instantly.
 
-Gemini 1.5 Pro Power: Leverages the advanced reasoning capabilities of the Gemini 1.5 Pro model for deep financial insights, structured budgeting, and investment suggestions.
+---
 
-Web Interface (Flask): Provides a simple web application for selecting a user ID and viewing the comprehensive financial report, metrics, and plan in a readable Markdown format.
+## 🧱 System Architecture
 
-Real-time Metrics: Parses JSON output from the analysis step to display key financial metrics (Income, Spending, Net Flow) instantly.
-
-🧱 System Architecture
 The PFAA operates on a modern, layered architecture designed for speed and modularity.
 
-Component
+| **Component**     | **Role** | **Technologies** |
+|-------------------|----------|------------------|
+| Frontend/UI       | User interaction, display of results, and user ID selection. | Flask (Templates/HTML) |
+| Application Layer | Orchestrates process, handles caching logic, manages agents. | Python, Flask, Redis Client |
+| Data Layer        | Centralized source of truth for transactions. | Google BigQuery |
+| Caching Layer     | Accelerates data access by storing frequently requested data. | Redis |
+| Agent Core        | State machine that executes analysis, planning, and recommendation steps. | LangGraph |
+| Intelligence Layer | Performs reasoning, report generation, budgeting, and investment advice. | Google Gemini 1.5 Pro |
 
-Role
+---
 
-Technologies
+## 🔁 Data Flow
 
-Frontend/UI
+1. A user selects a `user_id` on the Flask UI and initiates analysis.  
+2. The `get_transaction_data` tool checks Redis Cache for the user’s data.  
+3. If data is present (**cache hit**), it’s returned immediately (≈60% latency reduction).  
+4. If not present (**cache miss**), it fetches from BigQuery.  
+5. The data is passed to the **LangGraph** workflow, where the **Analyzer**, **Budgetor**, and **Investor** agents generate the final report using **Gemini 1.5 Pro**.  
+6. The final output is rendered to the user via the Flask UI.
 
-User interaction, display of results, and user ID selection.
+---
 
-Flask (Templates/HTML)
+## 🛠️ Tech Stack
 
-Application Layer
+- **Language Model:** Google Gemini 1.5 Pro (via `langchain-google-genai`)  
+- **AI Orchestration:** `langchain`, `langgraph`  
+- **Data Storage:** Google BigQuery  
+- **Caching:** Redis  
+- **Containerization:** Docker  
+- **Web Framework:** Flask (Python)  
+- **Data Source Layer:** Setu API or similar connector  
+- **Environment:** Python 3.9+  
+- **Authentication:** Google Cloud Service Account (`key.json`)  
+- **Dependencies:** `google-cloud-bigquery`, `python-dotenv`, `requests`, `redis`, etc.
 
-Orchestrates the entire process, handles caching logic, and manages the agents.
+---
 
-Python, Flask, Redis Client
+## 🎯 Project Achievements & Performance
 
-Data Layer
+- **Data Efficiency:** High-performance BigQuery pipeline, containerized with Docker and optimized with Redis caching, achieving a **60% reduction in data retrieval latency**.  
+- **Agent Efficacy:** Multi-agent LangGraph workflow achieved **85% user approval** for actionable insights and investment suggestions.  
+- **Data Quality:** Achieved **90% categorization accuracy** across 50 test users.  
+- **Deployment:** Fully Dockerized Flask + Redis environment.
 
-Provides the centralized, historical source of truth for all transactions.
+---
 
-Google BigQuery
+## 🚀 Getting Started
 
-Caching Layer
+### 1. Prerequisites
 
-Accelerates data access by storing frequently requested transaction data.
+- Docker and Docker Compose (recommended)
+- Python 3.9+ (if running without Docker)
+- Google Cloud Project with **BigQuery API** enabled
+- Gemini API Key (or Google Cloud environment setup for Gemini)
 
-Redis
+---
 
-Agent Core
+### 2. Setup Google Cloud Credentials
 
-The state machine that executes the financial analysis, planning, and recommendation steps sequentially.
-
-LangGraph
-
-Intelligence Layer
-
-Performs complex reasoning, generation of financial reports, budgets, and investment advice.
-
-Google Gemini 1.5 Pro
-
-Data Flow:
-
-A user selects a user_id on the Flask UI and initiates analysis.
-
-The get_transaction_data tool first checks the Redis Cache for the user's data.
-
-If data is present (cache hit), it's returned immediately (60% latency reduction).
-
-If data is not present (cache miss), it fetches from BigQuery.
-
-The data is passed to the LangGraph workflow, where the Analyzer, Budgetor, and Investor agents sequentially generate the final comprehensive report using the Gemini 1.5 Pro model.
-
-The final output is rendered back to the user via the Flask UI.
-
-🛠️ Tech Stack
-Language Model: Google Gemini 1.5 Pro (via langchain-google-genai)
-
-AI Orchestration: langchain and langgraph
-
-Data Storage: Google BigQuery
-
-Caching: Redis
-
-Containerization: Docker
-
-Web Framework: Python Flask
-
-Data Source Layer (Achieved): Setu API (or similar connector for data ingestion/categorization)
-
-Environment: Python 3.9+
-
-Authentication: Google Cloud Service Account (key.json)
-
-Dependencies: requirements.txt includes google-cloud-bigquery, python-dotenv, requests, redis, etc.
-
-🎯 Project Achievements & Performance
-The Personal Finance AI Agent was built and tested with a focus on high performance, accuracy, and user value, delivering the following key results in testing:
-
-Data Efficiency: Engineered a high-performance BigQuery data pipeline, containerized with Docker and optimized with Redis caching, resulting in a 60% reduction in data retrieval latency for real-time financial updates.
-
-Agent Efficacy: The multi-agent LangGraph workflow delivered personalized financial insights, achieving 85% user approval for actionable budget and investment recommendations.
-
-Data Quality: The data pipeline and categorization logic achieved 90% categorization accuracy for transactions across 50 test users.
-
-Deployment: Successfully Dockerized the complete environment, including the Flask application and Redis cache.
-
-🚀 Getting Started
-Follow these steps to set up and run the PFAA locally.
-
-1. Prerequisites
-You must have the following installed:
-
-Docker and Docker Compose (recommended for simplified environment setup)
-
-Python 3.9+ (if running without Docker)
-
-A Google Cloud Project with BigQuery API enabled.
-
-A Gemini API Key (or set up environment for your Google Cloud Project to access the Gemini API).
-
-2. Setup Google Cloud Credentials
 This agent requires access to a BigQuery dataset to fetch user transaction data.
 
-Create a Service Account: In your Google Cloud Project, create a new Service Account and download the JSON key file.
+1. **Create a Service Account**  
+   - In your Google Cloud Project, create a new Service Account and download the JSON key file.  
+2. **Rename Key**  
+   - Rename the file to `key.json` and place it in the root directory.  
+3. **BigQuery Data**  
+   - Ensure a table named `finance_data.transactions` exists.  
+   - Update `GCP_PROJECT_ID` in `app.py` if needed.  
+   - Required columns: `date`, `description`, `amount`, `category`, `bank_name`, and `user_id`.
 
-Rename Key: Rename the downloaded key file to key.json and place it in the root directory of this project.
+---
 
-BigQuery Data: Ensure you have a BigQuery table named finance_data.transactions in your project (calcium-scholar-467311-t5 or update GCP_PROJECT_ID in app.py). The table must contain the columns required by the get_transaction_data tool (date, description, amount, category, bank_name, and crucially, a user_id column).
+### 3. Environment Variables
 
-3. Environment Variables
-Create a file named .env in the root directory and populate it with your API key and other credentials, including settings for Redis and the Setu API integration (if active).
+Create a `.env` file in the project root:
 
+```env
 GOOGLE_API_KEY="YOUR_GEMINI_API_KEY"
-# This is used by the google-cloud-bigquery library
-GOOGLE_APPLICATION_CREDENTIALS="key.json" 
+GOOGLE_APPLICATION_CREDENTIALS="key.json"
 
-# Redis Cache Settings (Used for optimized data retrieval)
+# Redis Settings
 REDIS_HOST="localhost"
 REDIS_PORT="6379"
 
-# Decentro/Setu API Credentials (If used for data ingestion/categorization)
-DECENTRO_CLIENT_ID="YOUR_CLIENT_ID"
-DECENTRO_CLIENT_SECRET="YOUR_CLIENT_SECRET"
+# Setu API (optional)
+Setu_CLIENT_ID="YOUR_CLIENT_ID"
+Setu_CLIENT_SECRET="YOUR_CLIENT_SECRET"
 
-4. Installation & Running (Recommended: Docker)
-Using Docker simplifies setup as it handles dependencies like Redis and the Python environment.
+### 4. Installation & Running
 
-Build and Run: If Dockerfile and docker-compose.yml are provided in the repo, use Docker Compose to build the application image and start the services (App and Redis).
-
+#🐳 Using Docker (Recommended)
 docker-compose up --build
 
-If running without Docker:
-
-Clone the repository and install the required Python dependencies:
-
-git clone [https://github.com/Mayurdoiphode55/Personal_finance_AI_Agent.git](https://github.com/Mayurdoiphode55/Personal_finance_AI_Agent.git)
+#🐍 Without Docker
+git clone https://github.com/Mayurdoiphode55/Personal_finance_AI_Agent.git
 cd Personal_finance_AI_Agent
 pip install -r requirements.txt
-# You must also manually start a Redis instance running locally at REDIS_HOST:REDIS_PORT
 python app.py
 
-5. Access the Application
-The application will be available at http://127.0.0.1:5000/.
 
-🧠 Agent Workflow
-The LangGraph logic is defined in app.py and runs the following sequence:
+## 🧠 Agent Workflow
 
-analyzer_agent_node (Entry Point):
+The **LangGraph** logic (defined in `app.py`) executes in three sequential steps:
 
-Calls the get_transaction_data tool, which first checks the Redis cache for the selected user_id data before fetching from BigQuery, ensuring low-latency data access.
+### 1. Analyzer Agent (Entry Point)
+- Calls `get_transaction_data` tool (checks Redis → BigQuery).  
+- Calculates metrics: **Total Income**, **Total Spending**, **Net Flow**.  
+- Uses **Gemini 1.5 Pro** to generate a Markdown financial analysis + JSON metrics.
 
-Calculates basic metrics (Total Income, Total Spending, Net Flow).
+### 2. Budgetor Agent
+- Receives analysis output.  
+- Uses **Gemini 1.5 Pro** to generate a detailed budget plan.
 
-Uses Gemini 1.5 Pro to generate a detailed financial analysis report in Markdown format, combined with the raw metrics in JSON.
+### 3. Investor Agent (End Point)
+- Receives the budget plan.  
+- Uses **Gemini 1.5 Pro** to generate beginner-friendly, personalized investment options.
 
-budgetor_agent_node:
+---
 
-Receives the Analysis Result from the Analyzer.
+## 📁 Project Structure
 
-Uses Gemini 1.5 Pro to craft an encouraging and detailed budget plan based on the user's current spending habits.
-
-investor_agent_node (End Point):
-
-Receives the Budget Plan from the Budgetor.
-
-Uses Gemini 1.5 Pro to provide beginner-friendly, personalized investment options relevant to their financial standing.
-
-📁 Project Structure
 Personal_finance_AI_Agent/
-├── app.py                # Main Flask app, LangGraph workflow, and BigQuery/Redis logic
-├── requirements.txt      # Python dependencies (including redis)
-├── .env                  # Environment variables (API keys, Redis, Decentro/Setu)
-├── key.json              # Google Cloud Service Account credentials for BigQuery
-├── Dockerfile            # Docker configuration file for containerization
-├── docker-compose.yml    # (Assumed) Defines service orchestration (App + Redis)
+├── app.py                # Main Flask app, LangGraph workflow, BigQuery/Redis logic
+├── requirements.txt      # Dependencies
+├── .env                  # Environment variables
+├── key.json              # Google Cloud Service Account credentials
+├── Dockerfile            # Docker configuration
+├── docker-compose.yml    # Service orchestration (App + Redis)
 ├── templates/
-│   └── index.html        # HTML template for the web interface
-└── ...                   # Other files like .gitignore, .whl
+│   └── index.html        # Web interface
+└── ...                   # Other files (.gitignore, .whl, etc.)
+
