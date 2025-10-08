@@ -1,4 +1,4 @@
-# 📈 Financial Intelligence Agent: LangGraph & Gemini (PFAA)
+<img width="2880" height="1800" alt="image" src="https://github.com/user-attachments/assets/145e6617-d6dd-4505-a7da-4fd4b7ad5932" /># 📈 Financial Intelligence Agent: LangGraph & Gemini (PFAA)
 
 The **Personal Finance AI Agent (PFAA)** is a powerful, high-performance, multi-agent system built using **LangGraph** and the **Gemini 1.5 Pro** model.  
 It processes user financial data stored in **Google BigQuery**, analyzes spending habits, generates a personalized budget plan, and provides proactive investment recommendations via a simple **Flask web interface**.
@@ -110,18 +110,21 @@ REDIS_PORT="6379"
 
 # Setu API (optional)
 ```Setu_CLIENT_ID="YOUR_CLIENT_ID"```
+
 ```Setu_CLIENT_SECRET="YOUR_CLIENT_SECRET"```
 
 ### 4. Installation & Running
 
-#🐳 Using Docker (Recommended)
-```docker-compose up --build```
+```#🐳 Using Docker (Recommended)
+docker-compose up --build
+```
 
-#🐍 Without Docker
-```git clone https://github.com/Mayurdoiphode55/Personal_finance_AI_Agent.git```
-```cd Personal_finance_AI_Agent```
-```pip install -r requirements.txt```
-```python app.py```
+```#🐍 Without Docker
+git clone https://github.com/Mayurdoiphode55/Personal_finance_AI_Agent.git
+cd Personal_finance_AI_Agent
+pip install -r requirements.txt
+python app.py
+```
 
 
 ## 🧠 Agent Workflow
